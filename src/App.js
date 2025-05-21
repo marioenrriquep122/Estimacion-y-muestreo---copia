@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import Principal from "./components/Principal";
 import SeleccionDeDatos from "./components/SeleccionDeDatos";
 import Calculos from "./components/Calculos";
@@ -6,23 +6,37 @@ import GraficaDeIntervalos from "./components/GraficaDeIntervalos";
 import InfoPanel from "./components/InfoPanel";
 import DataDisplay from "./components/DataDisplay";
 
+const BACKGROUND_IMAGE_URL =
+  "https://4tsix0yujj.ufs.sh/f/2vMRHqOYUHc0om3zHsOgDjdvqUQH6XhKYIiaSc3LCtrM1fen";
+const Z_SCORE_95_CONFIDENCE = 1.96;
 
-//el app.js es el componente raiz de la aplicacion que gestiona y llama los componentes 
 const App = () => {
   const [userName, setUserName] = useState("");
-  const [dataReady, setDataReady] = useState(false);
+  const [isDataReady, setIsDataReady] = useState(false);
   const [stats, setStats] = useState(null);
   const [showNameForm, setShowNameForm] = useState(false);
 
-  //comento para que inicie siempre desde inicio de la parte del nombre
-  // useEffect(() => {
-  //   const savedName = localStorage.getItem("userName");
-  //   if (savedName) {
-  //     setUserName(savedName);
-  //   }
-  // }, []);
+  const backgroundStyle = useMemo(() => ({
+    backgroundImage: `url('${BACKGROUND_IMAGE_URL}')`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundAttachment: "fixed",
+    backgroundBlendMode: "overlay",
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+  }), []);
 
-  const handleDataReady = (data) => {
+  // Intervalo de confianza
+  const confidenceInterval = useMemo(() => {
+    if (!stats) return null;
+    const { mean, stdDev, sampleSize } = stats;
+    const standardError = stdDev / Math.sqrt(sampleSize);
+    return {
+      lower: mean - Z_SCORE_95_CONFIDENCE * standardError,
+      upper: mean + Z_SCORE_95_CONFIDENCE * standardError,
+    };
+  }, [stats]);
+
+  const onDataReady = useCallback((data) => {
     if (
       data &&
       typeof data.mean === "number" &&
@@ -30,85 +44,53 @@ const App = () => {
       data.sampleSize > 0
     ) {
       setStats(data);
-      setDataReady(true);
+      setIsDataReady(true);
     }
-  };
+  }, []);
 
-  const handleResetData = () => {
-    setDataReady(false);
+  const onResetData = useCallback(() => {
+    setIsDataReady(false);
     setStats(null);
-  };
+  }, []);
 
-  const handleChangeName = () => {
+  const onChangeName = useCallback(() => {
     setShowNameForm(true);
-  };
+  }, []);
 
-  const handleNameSubmit = (name) => {
-    setUserName(name);
-    setShowNameForm(false);
-    localStorage.setItem("userName", name);
-  };
+  const onNameSubmit = useCallback((name) => {
+    const trimmed = name.trim();
+    if (trimmed) {
+      setUserName(trimmed);
+      setShowNameForm(false);
+      localStorage.setItem("userName", trimmed);
+    }
+  }, []);
 
-  const resetApp = () => {
+  const onResetApp = useCallback(() => {
     setUserName("");
-    setDataReady(false);
+    setIsDataReady(false);
     setStats(null);
     localStorage.removeItem("userName");
-  };
+  }, []);
 
-    // const handleBackToWelcome = () => {
-    //   setDataReady(false);
-    //   setStats(null);
-    // };
-
-  if (showNameForm) {
-    return (
-      <Principal onNameSubmit={handleNameSubmit} initialName={userName} />
-    );
+  if (showNameForm || !userName) {
+    return <Principal onNameSubmit={onNameSubmit} initialName={userName} />;
   }
 
-  if (!userName) {
-    return <Principal onNameSubmit={handleNameSubmit} />;
-  }
-
-  if (!dataReady) {
+  if (!isDataReady) {
     return (
-      //imagen con color
-      <div
-        className="min-h-screen bg-gray-50"
-        style={{
-          backgroundImage:
-            "url('https://4tsix0yujj.ufs.sh/f/2vMRHqOYUHc0om3zHsOgDjdvqUQH6XhKYIiaSc3LCtrM1fen')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundAttachment: "fixed",
-          backgroundBlendMode: "overlay",
-          backgroundColor: "rgba(255, 255, 255, 0.9)",
-        }}
-      >
+      <div className="min-h-screen bg-gray-50" style={backgroundStyle}>
         <SeleccionDeDatos
           userName={userName}
-          onDataReady={handleDataReady}
-          onBack={handleChangeName}
+          onDataReady={onDataReady}
+          onBack={onChangeName}
         />
       </div>
     );
   }
 
   return (
-    <div
-      className="min-h-screen bg-gray-50"
-      style={{
-        backgroundImage:
-        //imagen sin color 
-          "url('https://4tsix0yujj.ufs.sh/f/2vMRHqOYUHc0om3zHsOgDjdvqUQH6XhKYIiaSc3LCtrM1fen')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundAttachment: "fixed",
-        backgroundBlendMode: "overlay",
-        backgroundColor: "rgba(255, 255, 255, 0.9)",
-      }}
-    >
+    <div className="min-h-screen bg-gray-50" style={backgroundStyle}>
       <div className="max-w-4xl mx-auto py-8 px-4">
         <header className="mb-8 bg-white rounded-xl shadow-lg p-6 backdrop-blur-sm bg-opacity-90 border border-gray-200">
           <div className="flex justify-between items-center">
@@ -123,13 +105,13 @@ const App = () => {
             </div>
             <div className="flex gap-3">
               <button
-                onClick={handleChangeName}
+                onClick={onChangeName}
                 className="text-sm bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors shadow-md"
               >
                 Cambiar usuario
               </button>
               <button
-                onClick={resetApp}
+                onClick={onResetApp}
                 className="text-sm bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg transition-colors shadow-md"
               >
                 Reiniciar todo
@@ -148,31 +130,24 @@ const App = () => {
             isAutoGenerated={!!stats?.generatedData}
           />
 
-          {stats && (
-            <GraficaDeIntervalos
-              interval={{
-                lower:
-                  stats.mean -
-                  1.96 * (stats.stdDev / Math.sqrt(stats.sampleSize)),
-                upper:
-                  stats.mean +
-                  1.96 * (stats.stdDev / Math.sqrt(stats.sampleSize)),
-              }}
-            />
+          {confidenceInterval && (
+            <GraficaDeIntervalos interval={confidenceInterval} />
           )}
 
           <InfoPanel />
 
           <div className="flex gap-4 justify-center">
             <button
-              onClick={handleResetData}
+              onClick={onResetData}
               className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-lg transition-colors shadow-md flex items-center gap-2"
+              aria-label="Iniciar nueva prueba"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-5 w-5"
                 viewBox="0 0 20 20"
                 fill="currentColor"
+                aria-hidden="true"
               >
                 <path
                   fillRule="evenodd"
@@ -190,5 +165,3 @@ const App = () => {
 };
 
 export default App;
-
-
