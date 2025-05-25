@@ -76,7 +76,7 @@ const Principal = ({ onNameSubmit, initialName = '' }) => {
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-700 placeholder-gray-400 transition-colors ${
                   name.trim() === '' ? 'border-gray-300' : isValid ? 'border-green-400' : 'border-red-300'
                 }`}
-                placeholder={initialName || "Ej: Juan Pérez"}
+                placeholder={initialName || "Ej: Andrea "}
                 autoFocus
               />
               <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">

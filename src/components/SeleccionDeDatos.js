@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import ManualData from './ManualData';
 import RandomData from './RandomData';
+import ExerciseInput from './ExerciseInput';
+import TwoPopulationInput from './TwoPopulationInput';
 
 const SeleccionDeDatos = ({ userName, onDataReady, onBack }) => {
   const [selectedOption, setSelectedOption] = useState(null);
@@ -59,12 +61,16 @@ const SeleccionDeDatos = ({ userName, onDataReady, onBack }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {renderOptionButton('manual', 'Datos Manuales', 'Ingresar valores uno por uno')}
             {renderOptionButton('random', 'Generar Datos Aleatorios', 'Crear muestra aleatoria automáticamente')}
+            {renderOptionButton('exercise', 'Ingresar Ejercicio', 'Escriba un ejercicio ')}
+            {renderOptionButton('twoPopulations', 'Dos Poblaciones', 'Ingresar datos de dos poblaciones')}
           </div>
         </div>
 
         <div className="mt-6">
           {selectedOption === 'manual' && <ManualData onDataReady={onDataReady} />}
           {selectedOption === 'random' && <RandomData onDataReady={onDataReady} key={selectedOption} />}
+          {selectedOption === 'exercise' && <ExerciseInput onDataReady={onDataReady} />}
+          {selectedOption === 'twoPopulations' && <TwoPopulationInput onDataReady={onDataReady} />}
         </div>
       </section>
     </div>
